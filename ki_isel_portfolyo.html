@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mert ÇİN | Kişisel Portfolyo</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0f172a',
+                        cardBg: '#1e293b',
+                        lightCard: '#ffffff',
+                        lightBg: '#f8fafc',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom smooth scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.5);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.8);
+        }
+        /* Realistic Hanging Rope on Top Left */
+        .rope-container {
+            position: fixed;
+            top: 0;
+            left: 100px;
+            z-index: 60;
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+        }
+        .rope-container:active {
+            cursor: grabbing;
+        }
+    </style>
+</head>
+<body class="bg-sky-50 dark:bg-darkBg text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-500 relative overflow-x-hidden selection:bg-blue-500 selection:text-white">
+
+    <!-- Canvas background for seasonal elements -->
+    <canvas id="bgCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
+
+    <!-- Interactive Certification Bubble (Hovers over Snowman / Dog) -->
+    <div id="certBubble" class="fixed z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-2xl w-72 sm:w-80 opacity-0 pointer-events-none transition-all duration-300 transform translate-y-2">
+        <div class="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">
+            <div class="flex items-center space-x-2">
+                <div class="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center text-amber-600 dark:text-amber-400 text-xs">
+                    <i class="fa-solid fa-certificate"></i>
+                </div>
+                <h4 class="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-100">Sertifikalarım</h4>
+            </div>
+            <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all shadow-sm flex items-center space-x-1">
+                <i class="fa-solid fa-plus text-[9px]"></i>
+                <span>Yükle</span>
+                <input type="file" id="certFileInput" class="hidden" accept="image/*,.pdf">
+            </label>
+        </div>
+        <div id="certListContainer" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+            <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-xs">
+                <span class="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[180px]">Cisco Network Temelleri.pdf</span>
+                <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded">Doğrulandı</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-xs">
+                <span class="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[180px]">Python & AI Temel Eğitimi</span>
+                <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded">Doğrulandı</span>
+            </div>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-2 text-center">Yeni sertifika eklemek için "Yükle" butonuna tıklayın.</p>
+    </div>
+
+    <!-- Interactive Realistic Drag-to-Pull Hanging Rope (Top Left) -->
+    <div id="ropeTrigger" class="rope-container group flex flex-col items-center" title="Aşağı çekerek defteri aç">
+        <div id="ropeLine" style="height: 140px;" class="w-[4px] bg-gradient-to-b from-amber-900/90 via-amber-700/80 to-amber-900/90 dark:from-amber-700 dark:via-amber-800 dark:to-amber-900 transition-all duration-100 relative origin-top shadow-sm">
+            <div class="absolute bottom-0 -left-1 w-1.5 h-3 bg-amber-800 dark:bg-amber-700 rounded-b-full"></div>
+            <div class="absolute bottom-0 left-0.5 w-1.5 h-3 bg-amber-900 dark:bg-amber-800 rounded-b-full"></div>
+        </div>
+    </div>
+
+    <!-- Perfectly Centered Proportional Notebook Modal (Triggered by Rope Pull) -->
+    <div id="ropeCardModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300 p-4">
+        <div id="ropeCardContent" class="bg-[#8B5A2B] dark:bg-[#5C3A21] border-4 border-[#5C3A21] dark:border-[#3D2514] rounded-3xl p-6 sm:p-8 max-w-3xl w-full shadow-2xl transform scale-95 transition-all duration-300 relative shadow-[10px_10px_30px_rgba(0,0,0,0.5)]">
+            
+            <button id="closeRopeCard" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white transition-colors z-20">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="relative flex flex-col md:flex-row gap-4">
+                <div class="hidden md:flex flex-col justify-around absolute left-1/2 -translate-x-1/2 top-4 bottom-4 w-6 z-10 pointer-events-none py-4">
+                    <div class="w-full h-3 bg-amber-200 border border-amber-400 rounded-full shadow-md"></div>
+                    <div class="w-full h-3 bg-amber-200 border border-amber-400 rounded-full shadow-md"></div>
+                    <div class="w-full h-3 bg-amber-200 border border-amber-400 rounded-full shadow-md"></div>
+                    <div class="w-full h-3 bg-amber-200 border border-amber-400 rounded-full shadow-md"></div>
+                    <div class="w-full h-3 bg-amber-200 border border-amber-400 rounded-full shadow-md"></div>
+                    <div class="w-full h-3 bg-amber-200 border border-amber-400 rounded-full shadow-md"></div>
+                </div>
+
+                <div class="flex-1 bg-white dark:bg-slate-100 rounded-2xl p-6 text-slate-800 shadow-inner flex flex-col justify-between border-r-2 border-slate-200 relative">
+                    <div>
+                        <div class="flex items-center space-x-3 border-b border-slate-200 pb-3 mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-800">
+                                <i class="fa-solid fa-book text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-base text-slate-900">Sol Sayfa: Proje Bilgisi</h4>
+                                <p class="text-xs text-slate-500">Mert ÇİN Arşivi</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-amber-50/50 rounded-2xl p-4 border border-amber-200/60 space-y-3">
+                            <h5 class="font-bold text-base text-slate-900">Gelişmiş Ağ İzleme Aracı</h5>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                Bu defter sayfası, halat mekanizması çekilerek açıldı. İnternet ve Ağ Teknolojileri kapsamında veri akışını izlemek için tasarladığım prototip çalışmamdır.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 text-[11px] text-slate-400 flex items-center justify-between border-t border-slate-100 mt-4">
+                        <span>Sayfa 1</span>
+                        <span><i class="fa-solid fa-network-wired mr-1"></i> Ağ Güvenliği</span>
+                    </div>
+                </div>
+
+                <div class="flex-1 bg-white dark:bg-slate-100 rounded-2xl p-6 text-slate-800 shadow-inner flex flex-col justify-between relative">
+                    <div>
+                        <div class="flex items-center space-x-3 border-b border-slate-200 pb-3 mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-blue-100 border border-blue-300 flex items-center justify-center text-blue-800">
+                                <i class="fa-solid fa-user-graduate text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-base text-slate-900">Sağ Sayfa: Kimlik</h4>
+                                <p class="text-xs text-slate-500">Doğuş Üniversitesi</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3 text-xs text-slate-600 leading-relaxed">
+                            <p><strong>Öğrenci:</strong> Mert ÇİN</p>
+                            <p><strong>Bölüm:</strong> İnternet ve Ağ Teknolojileri (1. Sınıf)</p>
+                            <p><strong>Odak:</strong> Yapay zeka çalışmaları ve yerel ağ altyapı yönetimi.</p>
+                        </div>
+                    </div>
+
+                    <div class="pt-4">
+                        <button id="closeCardBtn" class="w-full py-2.5 rounded-xl bg-[#8B5A2B] hover:bg-[#724822] text-white font-semibold text-xs shadow-md transition-all">
+                            Kapat
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Header / Navbar -->
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-sky-50/80 dark:bg-darkBg/80 border-b border-sky-100 dark:border-slate-800 transition-colors duration-500">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div id="avatarContainer" class="w-11 h-11 rounded-xl bg-sky-200 flex items-center justify-center font-bold text-indigo-950 text-lg shadow-sm border border-sky-300 transition-colors duration-500">
+                    MÇ
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight tracking-tight">Mert ÇİN</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">İnternet ve Ağ Teknolojileri</p>
+                </div>
+            </div>
+
+            <!-- Theme Toggle Switch with Sun and Snowflake Icons Framed Outside -->
+            <div class="flex items-center space-x-2.5">
+                <i class="fa-solid fa-sun text-amber-500 text-sm"></i>
+                <button id="themeToggleBtn" aria-label="Tema Değiştir" class="relative w-14 h-7 rounded-full bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 shadow-inner p-0.5 cursor-pointer transition-colors duration-300 flex items-center">
+                    <!-- Sliding knob -->
+                    <div id="themeKnob" class="w-6 h-6 rounded-full bg-white shadow-md border border-slate-300 transition-transform duration-300 transform translate-x-0"></div>
+                </button>
+                <i class="fa-solid fa-snowflake text-sky-400 text-sm"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 z-10 w-full space-y-10 pb-36">
+
+        <!-- Hero Section -->
+        <section class="text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-8 py-6 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-8 sm:p-12 shadow-xl shadow-slate-200/50 dark:shadow-none transition-colors duration-500">
+            <div class="space-y-4 max-w-2xl">
+                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400 text-xs font-semibold tracking-wide">
+                    <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                    <span>Aktif Öğrenci & Geliştirici</span>
+                </div>
+                <h2 class="text-3xl sm:text-5xl font-extrabold tracking-tight">
+                    Merhaba, Ben <span class="text-blue-600 dark:text-blue-400">Mert ÇİN</span> 👋
+                </h2>
+                <p class="text-slate-600 dark:text-slate-300 text-base sm:text-lg leading-relaxed">
+                    İnternet ve Ağ Teknolojileri öğrencisiyim. Yapay zeka alanında kendimi geliştiriyor, ve ağ altyapıları üzerine çalışmalar yapıyorum.
+                </p>
+                <div class="pt-2 flex flex-wrap gap-3 justify-center sm:justify-start">
+                    <a href="#projects" class="px-6 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-300 flex items-center space-x-2">
+                        <i class="fa-solid fa-code"></i>
+                        <span>Çalışmalarım</span>
+                    </a>
+                </div>
+            </div>
+            <div class="w-44 h-44 sm:w-56 sm:h-56 rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-sky-400 p-[2px] shadow-2xl flex-shrink-0">
+                <div class="w-full h-full bg-white dark:bg-slate-900 rounded-[22px] flex flex-col items-center justify-center text-center p-6 transition-colors duration-500">
+                    <div class="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-slate-800 border border-blue-100 dark:border-slate-700 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-3 shadow-sm">
+                        <i class="fa-solid fa-graduation-cap text-2xl"></i>
+                    </div>
+                    <span class="font-bold text-sm tracking-tight text-slate-800 dark:text-slate-100">Doğuş Üniversitesi</span>
+                    <span class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">İnternet ve Ağ Teknolojileri</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Two Split Grid Section: Hakkımda & Portfolyo Amacı -->
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-8 shadow-xl shadow-slate-200/50 dark:shadow-none transition-colors duration-500 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                            <i class="fa-solid fa-user text-lg"></i>
+                        </div>
+                        <h3 class="text-xl font-bold">Hakkımda</h3>
+                    </div>
+                    <p class="text-slate-600 dark:text-slate-300 text-sm sm:text-base leading-relaxed">
+                        Teknolojinin arka planındaki sistemleri, ağ topolojilerini ve veri akışını keşfetmeye büyük bir tutku duyuyorum. Problem çözme odaklı yapım ve analitik düşünce becerimle, dijital dünyada sağlam ve güvenli yapılar kurmayı hedefliyorum. Yapay zeka ve ağ altyapılarını harmanlayarak yenilikçi projeler üretmek temel motivasyonumdur.
+                    </p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <span><i class="fa-solid fa-location-dot mr-1"></i> İstanbul / Türkiye</span>
+                    <span><i class="fa-solid fa-graduation-cap mr-1"></i> 1. Sınıf Öğrencisi</span>
+                </div>
+            </div>
+
+            <div class="bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-8 shadow-xl shadow-slate-200/50 dark:shadow-none transition-colors duration-500 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                            <i class="fa-solid fa-bullseye text-lg"></i>
+                        </div>
+                        <h3 class="text-xl font-bold">Portfolyonun Amacı</h3>
+                    </div>
+                    <p class="text-slate-600 dark:text-slate-300 text-sm sm:text-base leading-relaxed">
+                        Bu portfolyo sitesini; öğrendiğim teknik bilgileri sergilemek, geliştirdiğim projeleri tek bir merkezde toplamak ve gelecekteki kariyer yolculuğumda profesyonel bir dijital kimlik oluşturmak amacıyla açtım. Kendimi sürekli güncel tutarak, öğrendiğim yenilikleri bu platform üzerinde paylaşmayı ve sektördeki gelişimimi somut bir şekilde yansıtmayı hedefliyorum.
+                    </p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <span><i class="fa-solid fa-compass mr-1"></i> Dijital Kimlik & Projeler</span>
+                    <span><i class="fa-solid fa-rocket mr-1"></i> Sürekli Gelişim</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Eğitim ve Yetkinlikler Info Box -->
+        <section class="bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-8 shadow-xl shadow-slate-200/50 dark:shadow-none transition-colors duration-500">
+            <div class="flex items-center space-x-3 mb-6">
+                <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-900 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                    <i class="fa-solid fa-graduation-cap text-lg"></i>
+                </div>
+                <h3 class="text-xl font-bold">Eğitim ve Yetkinlikler</h3>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div class="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60">
+                    <div class="text-blue-600 dark:text-blue-400 font-bold mb-1"><i class="fa-solid fa-university mr-2"></i>Doğuş Üniversitesi</div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">İnternet ve Ağ Teknolojileri Bölümü</p>
+                </div>
+                <div class="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60">
+                    <div class="text-indigo-600 dark:text-indigo-400 font-bold mb-1"><i class="fa-solid fa-microchip mr-2"></i>Odak Alanları</div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Ağ Altyapısı, Yapay Zeka & Web Geliştirme</p>
+                </div>
+                <div class="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60">
+                    <div class="text-emerald-600 dark:text-emerald-400 font-bold mb-1"><i class="fa-solid fa-network-wired mr-2"></i>Ağ Sistemleri</div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Yerel Ağ Yönetimi & Altyapı</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Öne Çıkan Çalışmalar (Projects Grid) -->
+        <section id="projects" class="space-y-6">
+            <div class="flex items-center justify-between">
+                <h3 class="text-2xl font-bold tracking-tight">Öne Çıkan Çalışmalar</h3>
+                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Güncel Projeler</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Project 1 -->
+                <div class="bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-xl shadow-slate-200/50 dark:shadow-none hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-4">
+                            <i class="fa-solid fa-server text-xl"></i>
+                        </div>
+                        <h4 class="font-bold text-lg mb-2">Yerel Ağ Simülasyonu</h4>
+                        <p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+                            Cisco Packet Tracer ve modern ağ topolojileri kullanarak kurulan örnek kurumsal yerel ağ altyapı tasarımı.
+                        </p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
+                        <span>Ağ Mimarisi</span>
+                        <span class="text-blue-600 dark:text-blue-400">Devam Ediyor</span>
+                    </div>
+                </div>
+
+                <!-- Project 2 -->
+                <div class="bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-xl shadow-slate-200/50 dark:shadow-none hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4">
+                            <i class="fa-solid fa-brain text-xl"></i>
+                        </div>
+                        <h4 class="font-bold text-lg mb-2">Yapay Zeka Destekli Asistan</h4>
+                        <p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+                            Python ve modern LLM API'leri entegre edilerek geliştirilen akıllı soru-cevap ve veri analiz aracı.
+                        </p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
+                        <span>Python / AI</span>
+                        <span class="text-indigo-600 dark:text-indigo-400">Tamamlandı</span>
+                    </div>
+                </div>
+
+                <!-- Project 3 -->
+                <div class="bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-6 shadow-xl shadow-slate-200/50 dark:shadow-none hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-900 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-4">
+                            <i class="fa-solid fa-globe text-xl"></i>
+                        </div>
+                        <h4 class="font-bold text-lg mb-2">Kişisel Portfolyo Sitesi</h4>
+                        <p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+                            Dinamik sezon efektleri (Yaz/Kış modları, kar/çimen zeminleri, ışıklı ipler) içeren modern web arayüzü.
+                        </p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
+                        <span>HTML / Tailwind</span>
+                        <span class="text-amber-600 dark:text-amber-400">Aktif</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- İletişim / Mail Bölümü -->
+        <section id="contact" class="bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800/80 rounded-3xl p-8 shadow-xl shadow-slate-200/50 dark:shadow-none transition-colors duration-500 text-center space-y-4">
+            <div class="w-12 h-12 mx-auto rounded-2xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                <i class="fa-solid fa-envelope text-xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold tracking-tight">İletişime Geçin</h3>
+            <p class="text-slate-600 dark:text-slate-300 text-sm max-w-md mx-auto">
+                Sorularınız, projeleriniz veya iş birlikleri için doğrudan e-posta adresim üzerinden bana ulaşabilirsiniz.
+            </p>
+            <div class="pt-2">
+                <a href="mailto:202607124007@dogus.edu.tr" class="inline-flex items-center space-x-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-all shadow-lg shadow-blue-500/25">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span>202607124007@dogus.edu.tr</span>
+                </a>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-sky-100 dark:border-slate-800 py-6 text-center text-xs text-slate-500 dark:text-slate-400 bg-sky-50/50 dark:bg-darkBg/50 backdrop-blur-md z-10 transition-colors duration-500">
+        <p>&copy; 2026 Mert ÇİN. Tüm hakları saklıdır. Doğuş Üniversitesi - İnternet ve Ağ Teknolojileri | E-posta: 202607124007@dogus.edu.tr</p>
+    </footer>
+
+    <!-- Interactive Script & Animated Background Canvas -->
+    <script>
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        function resizeCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Rope drag-to-pull interaction logic
+        const ropeTrigger = document.getElementById('ropeTrigger');
+        const ropeLine = document.getElementById('ropeLine');
+        const ropeCardModal = document.getElementById('ropeCardModal');
+        const ropeCardContent = document.getElementById('ropeCardContent');
+        const closeRopeCard = document.getElementById('closeRopeCard');
+        const closeCardBtn = document.getElementById('closeCardBtn');
+
+        let isDragging = false;
+        let startY = 0;
+        let currentPull = 0;
+        const maxPullDistance = 160;
+
+        ropeTrigger.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startY = e.clientY;
+            ropeTrigger.style.cursor = 'grabbing';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            let deltaY = e.clientY - startY;
+            if (deltaY < 0) deltaY = 0;
+            currentPull = Math.min(deltaY, maxPullDistance);
+            ropeLine.style.height = (140 + currentPull) + 'px';
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (!isDragging) return;
+            isDragging = false;
+            ropeTrigger.style.cursor = 'grab';
+
+            if (currentPull >= 100) {
+                openCard();
+            }
+
+            ropeLine.style.transition = 'height 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            ropeLine.style.height = '140px';
+            setTimeout(() => {
+                ropeLine.style.transition = 'none';
+            }, 400);
+            currentPull = 0;
+        });
+
+        function openCard() {
+            ropeCardModal.classList.remove('opacity-0', 'pointer-events-none');
+            ropeCardContent.classList.remove('scale-95');
+            ropeCardContent.classList.add('scale-100');
+        }
+
+        function closeCard() {
+            ropeCardModal.classList.add('opacity-0', 'pointer-events-none');
+            ropeCardContent.classList.remove('scale-100');
+            ropeCardContent.classList.add('scale-95');
+        }
+
+        closeRopeCard.addEventListener('click', closeCard);
+        closeCardBtn.addEventListener('click', closeCard);
+        ropeCardModal.classList.add('opacity-0', 'pointer-events-none');
+        ropeCardModal.addEventListener('click', (e) => {
+            if (e.target === ropeCardModal) closeCard();
+        });
+
+        // Theme management
+        const htmlEl = document.documentElement;
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const themeKnob = document.getElementById('themeKnob');
+        const avatarContainer = document.getElementById('avatarContainer');
+
+        function updateThemeUI(isDark) {
+            if (isDark) {
+                htmlEl.classList.add('dark');
+                themeKnob.style.transform = 'translateX(28px)';
+                avatarContainer.className = 'w-11 h-11 rounded-xl bg-slate-800 flex items-center justify-center font-bold text-sky-400 text-lg shadow-sm border border-slate-700 transition-colors duration-500';
+            } else {
+                htmlEl.classList.remove('dark');
+                themeKnob.style.transform = 'translateX(0px)';
+                avatarContainer.className = 'w-11 h-11 rounded-xl bg-sky-200 flex items-center justify-center font-bold text-indigo-950 text-lg shadow-sm border border-sky-300 transition-colors duration-500';
+            }
+        }
+
+        let isDarkMode = htmlEl.classList.contains('dark');
+        updateThemeUI(isDarkMode);
+
+        themeToggleBtn.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            updateThemeUI(isDarkMode);
+        });
+
+        // Certification upload & storage logic
+        const certFileInput = document.getElementById('certFileInput');
+        const certListContainer = document.getElementById('certListContainer');
+
+        certFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const newItem = document.createElement('div');
+            newItem.className = 'p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-xs animate-pulse';
+            newItem.innerHTML = `
+                <span class="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[180px]">${file.name}</span>
+                <span class="text-[10px] text-blue-600 dark:text-blue-400 font-semibold bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded">Yüklendi</span>
+            `;
+            certListContainer.prepend(newItem);
+            setTimeout(() => newItem.classList.remove('animate-pulse'), 1500);
+            certFileInput.value = '';
+        });
+
+        // Snow particles for winter mode
+        const snowflakes = [];
+        const numSnowflakes = 90;
+        for (let i = 0; i < numSnowflakes; i++) {
+            snowflakes.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                radius: Math.random() * 3 + 1,
+                speed: Math.random() * 1.5 + 0.5,
+                density: Math.random() * 20,
+                opacity: Math.random() * 0.7 + 0.3
+            });
+        }
+
+        // Butterflies for summer mode
+        const butterflies = [
+            { x: 150, y: 250, vx: 1.2, vy: -0.5, color: '#f43f5e', size: 8, angle: 0 },
+            { x: 400, y: 320, vx: -1.0, vy: 0.8, color: '#8b5cf6', size: 10, angle: 0 },
+            { x: 750, y: 200, vx: 0.8, vy: 0.6, color: '#0ea5e9', size: 7, angle: 0 },
+            { x: 250, y: 450, vx: -1.5, vy: -0.4, color: '#10b981', size: 9, angle: 0 }
+        ];
+
+        // Falling leaves for summer mode
+        const leaves = [];
+        const numLeaves = 15;
+        for (let i = 0; i < numLeaves; i++) {
+            leaves.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                speedY: Math.random() * 1 + 0.5,
+                speedX: Math.random() * 1 - 0.5,
+                size: Math.random() * 6 + 4,
+                rotation: Math.random() * Math.PI,
+                rotSpeed: Math.random() * 0.05 - 0.025
+            });
+        }
+
+        // Clouds for summer mode
+        const clouds = [
+            { x: 100, y: 80, speed: 0.3, scale: 1 },
+            { x: 500, y: 130, speed: 0.2, scale: 0.8 },
+            { x: 900, y: 70, speed: 0.25, scale: 1.2 }
+        ];
+
+        let angle = 0;
+        let specialEntityBox = { x: 0, y: 0, width: 40, height: 50 };
+        const certBubble = document.getElementById('certBubble');
+        let isHoveringEntity = false;
+
+        window.addEventListener('mousemove', (e) => {
+            const rect = specialEntityBox;
+            if (e.clientX >= rect.x - 25 && e.clientX <= rect.x + rect.width + 25 &&
+                e.clientY >= rect.y - 20 && e.clientY <= rect.y + rect.height + 20) {
+                if (!isHoveringEntity) {
+                    isHoveringEntity = true;
+                    certBubble.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-2');
+                    certBubble.classList.add('translate-y-0');
+                    // Center the bubble horizontally relative to the snowman/dog figure
+                    let bubbleX = rect.x + (rect.width / 2) - 160;
+                    let bubbleY = rect.y - 220;
+                    if (bubbleX < 10) bubbleX = 10;
+                    if (bubbleX + 320 > width) bubbleX = width - 330;
+                    if (bubbleY < 10) bubbleY = 10;
+                    certBubble.style.left = bubbleX + 'px';
+                    certBubble.style.top = bubbleY + 'px';
+                }
+            } else {
+                if (isHoveringEntity && !certBubble.matches(':hover')) {
+                    isHoveringEntity = false;
+                    certBubble.classList.add('opacity-0', 'pointer-events-none', 'translate-y-2');
+                    certBubble.classList.remove('translate-y-0');
+                }
+            }
+        });
+
+        certBubble.addEventListener('mouseleave', () => {
+            if (!isHoveringEntity) {
+                certBubble.classList.add('opacity-0', 'pointer-events-none', 'translate-y-2');
+                certBubble.classList.remove('translate-y-0');
+            }
+        });
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+
+            const isDark = htmlEl.classList.contains('dark');
+
+            if (!isDark) {
+                // --- SUMMER MODE CELESTIAL BODY & CLOUDS ---
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(width - 120, 100, 45, 0, Math.PI * 2);
+                ctx.fillStyle = '#fbbf24';
+                ctx.shadowColor = 'rgba(251, 191, 36, 0.4)';
+                ctx.shadowBlur = 35;
+                ctx.fill();
+                ctx.restore();
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+                clouds.forEach(cloud => {
+                    cloud.x += cloud.speed;
+                    if (cloud.x > width + 150) cloud.x = -150;
+
+                    ctx.beginPath();
+                    ctx.arc(cloud.x, cloud.y, 25 * cloud.scale, 0, Math.PI * 2);
+                    ctx.arc(cloud.x + 20 * cloud.scale, cloud.y - 10 * cloud.scale, 20 * cloud.scale, 0, Math.PI * 2);
+                    ctx.arc(cloud.x + 40 * cloud.scale, cloud.y, 22 * cloud.scale, 0, Math.PI * 2);
+                    ctx.closePath();
+                    ctx.fill();
+                });
+
+                // --- BUTTERFLIES IN SUMMER MODE ---
+                butterflies.forEach(b => {
+                    b.x += b.vx + Math.sin(b.angle) * 0.8;
+                    b.y += b.vy + Math.cos(b.angle) * 0.5;
+                    b.angle += 0.05;
+
+                    if (b.x < -50) b.x = width + 50;
+                    if (b.x > width + 50) b.x = -50;
+                    if (b.y < 100) b.y = 100;
+                    if (b.y > height - 100) b.y = height - 100;
+
+                    ctx.save();
+                    ctx.translate(b.x, b.y);
+                    ctx.fillStyle = b.color;
+                    ctx.beginPath();
+                    ctx.ellipse(-b.size / 2, 0, b.size, b.size * 1.5, Math.PI / 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.ellipse(b.size / 2, 0, b.size, b.size * 1.5, -Math.PI / 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                });
+
+                // --- FALLING LEAVES IN SUMMER MODE ---
+                ctx.fillStyle = '#15803d';
+                leaves.forEach(leaf => {
+                    leaf.y += leaf.speedY;
+                    leaf.x += leaf.speedX + Math.sin(leaf.y * 0.02) * 0.5;
+                    leaf.rotation += leaf.rotSpeed;
+
+                    if (leaf.y > height) {
+                        leaf.y = -20;
+                        leaf.x = Math.random() * width;
+                    }
+
+                    ctx.save();
+                    ctx.translate(leaf.x, leaf.y);
+                    ctx.rotate(leaf.rotation);
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, leaf.size, leaf.size * 0.5, 0, 0, Math.PI * 2);
+                    ctx.fillStyle = '#22c55e';
+                    ctx.fill();
+                    ctx.restore();
+                });
+            } else {
+                // --- WINTER MODE CELESTIAL BODY (FULL MOON) ---
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(width - 120, 100, 35, 0, Math.PI * 2);
+                ctx.fillStyle = '#f8fafc';
+                ctx.shadowColor = 'rgba(248, 250, 252, 0.6)';
+                ctx.shadowBlur = 40;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // --- PINE TREES ALONG THE BOTTOM ---
+            const groundY = height - 15;
+            const treeSpacing = 140; 
+            const numTrees = Math.ceil(width / treeSpacing) + 2;
+
+            for (let i = -1; i < numTrees; i++) {
+                const treeX = i * treeSpacing + 70;
+                const treeHeight = 150;
+                const treeWidth = 44;
+
+                // Trunk
+                ctx.fillStyle = isDark ? '#1e293b' : '#334155';
+                ctx.fillRect(treeX - 5, groundY - 25, 10, 25);
+
+                // Pine Tiers (3 tiers)
+                const tier1Bottom = groundY - 20;
+                const tier1Top = groundY - 80;
+                const tier2Bottom = groundY - 60;
+                const tier2Top = groundY - 115;
+                const tier3Bottom = groundY - 95;
+                const tier3Top = groundY - 145;
+
+                // Tier 1 (Bottom)
+                ctx.fillStyle = isDark ? '#1e3a2f' : '#166534';
+                ctx.beginPath();
+                ctx.moveTo(treeX, tier1Top);
+                ctx.lineTo(treeX - treeWidth, tier1Bottom);
+                ctx.lineTo(treeX + treeWidth, tier1Bottom);
+                ctx.closePath();
+                ctx.fill();
+
+                // Tier 2 (Middle)
+                ctx.fillStyle = isDark ? '#234e3d' : '#15803d';
+                ctx.beginPath();
+                ctx.moveTo(treeX, tier2Top);
+                ctx.lineTo(treeX - treeWidth * 0.82, tier2Bottom);
+                ctx.lineTo(treeX + treeWidth * 0.82, tier2Bottom);
+                ctx.closePath();
+                ctx.fill();
+
+                // Tier 3 (Top)
+                ctx.fillStyle = isDark ? '#2b5f4c' : '#22c55e';
+                ctx.beginPath();
+                ctx.moveTo(treeX, tier3Top);
+                ctx.lineTo(treeX - treeWidth * 0.62, tier3Bottom);
+                ctx.lineTo(treeX + treeWidth * 0.62, tier3Bottom);
+                ctx.closePath();
+                ctx.fill();
+
+                // Snow caps on trees in winter mode
+                if (isDark) {
+                    ctx.fillStyle = '#f8fafc';
+                    ctx.beginPath();
+                    ctx.moveTo(treeX, tier3Top);
+                    ctx.lineTo(treeX - 10, tier3Top + 14);
+                    ctx.lineTo(treeX + 10, tier3Top + 14);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.moveTo(treeX, tier2Top);
+                    ctx.lineTo(treeX - 13, tier2Top + 16);
+                    ctx.lineTo(treeX + 13, tier2Top + 16);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.moveTo(treeX, tier1Top);
+                    ctx.lineTo(treeX - 16, tier1Top + 18);
+                    ctx.lineTo(treeX + 16, tier1Top + 18);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+
+            // --- SPECIFIC POSITION FOR CHARACTER/ANIMAL ---
+            const targetTreeIndex = Math.max(1, Math.floor(width / treeSpacing) - 2);
+            const specialX = (targetTreeIndex * treeSpacing + 70) + (treeSpacing / 2);
+            const specialY = groundY;
+
+            specialEntityBox = {
+                x: specialX - 15,
+                y: specialY - 35,
+                width: 30,
+                height: 35
+            };
+
+            if (isDark) {
+                // --- SNOWMAN IN WINTER MODE ---
+                ctx.save();
+                const r3 = 14;
+                const r2 = 10;
+                const r1 = 7;
+                
+                const cY3 = specialY - r3;
+                const cY2 = cY3 - r3 - r2 + 2;
+                const cY1 = cY2 - r2 - r1 + 2;
+
+                ctx.beginPath();
+                ctx.arc(specialX, cY3, r3, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = 'rgba(255,255,255,0.8)';
+                ctx.shadowBlur = 10;
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(specialX, cY2, r2, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(specialX, cY1, r1, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath();
+                ctx.arc(specialX - 2.5, cY1 - 1, 1.2, 0, Math.PI * 2);
+                ctx.arc(specialX + 2.5, cY1 - 1, 1.2, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#f97316';
+                ctx.beginPath();
+                ctx.moveTo(specialX, cY1 + 1);
+                ctx.lineTo(specialX + 6, cY1 + 2);
+                ctx.lineTo(specialX, cY1 + 3);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            } else {
+                // --- CUTE SITTING DOG IN SUMMER MODE ---
+                ctx.save();
+                const dx = specialX;
+                const dy = specialY;
+
+                ctx.fillStyle = '#d97706';
+                ctx.beginPath();
+                ctx.ellipse(dx, dy - 12, 11, 12, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillRect(dx - 6, dy - 4, 3, 4);
+                ctx.fillRect(dx + 3, dy - 4, 3, 4);
+
+                ctx.beginPath();
+                ctx.arc(dx, dy - 28, 9, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.ellipse(dx - 8, dy - 27, 3.5, 6, Math.PI / 6, 0, Math.PI * 2);
+                ctx.ellipse(dx + 8, dy - 27, 3.5, 6, -Math.PI / 6, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#b45309';
+                ctx.beginPath();
+                ctx.arc(dx, dy - 26, 4.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#1e293b';
+                ctx.beginPath();
+                ctx.arc(dx, dy - 27, 1.8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // --- WINTER STRING LIGHTS ---
+            if (isDark) {
+                ctx.save();
+                for (let i = 0; i < numTrees - 1; i++) {
+                    const x1 = i * treeSpacing + 70;
+                    const x2 = (i + 1) * treeSpacing + 70;
+                    const y1 = groundY - 145;
+                    const y2 = groundY - 145;
+                    const controlY = y1 + 65;
+
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.quadraticCurveTo((x1 + x2) / 2, controlY, x2, y2);
+                    ctx.strokeStyle = '#334155';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+
+                    const numBulbs = 6;
+                    for (let b = 1; b < numBulbs; b++) {
+                        const t = b / numBulbs;
+                        const bx = (1 - t) * (1 - t) * x1 + 2 * (1 - t) * t * ((x1 + x2) / 2) + t * t * x2;
+                        const by = (1 - t) * (1 - t) * y1 + 2 * (1 - t) * t * controlY + t * t * y2;
+
+                        ctx.beginPath();
+                        ctx.arc(bx, by + 3, 3.5, 0, Math.PI * 2);
+                        ctx.fillStyle = '#facc15';
+                        ctx.shadowColor = '#facc15';
+                        ctx.shadowBlur = 10;
+                        ctx.fill();
+                    }
+                }
+                ctx.restore();
+            }
+
+            // --- GROUND FLOOR BAR ---
+            ctx.fillStyle = isDark ? '#cbd5e1' : '#15803d';
+            ctx.fillRect(0, groundY, width, 15);
+
+            // --- SNOWFALL EFFECT IN WINTER MODE ---
+            if (isDark) {
+                angle += 0.01;
+                snowflakes.forEach(flake => {
+                    ctx.beginPath();
+                    ctx.arc(flake.x, flake.y, flake.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${flake.opacity})`;
+                    ctx.fill();
+
+                    flake.y += flake.speed;
+                    flake.x += Math.sin(angle + flake.density) * 0.5;
+
+                    if (flake.y > height) {
+                        flake.y = -10;
+                        flake.x = Math.random() * width;
+                    }
+                });
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        window.onload = function () {
+            animate();
+        };
+    </script>
+</body>
+</html>
